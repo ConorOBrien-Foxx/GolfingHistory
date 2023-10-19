@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Commit Frequency Visualizer</title>
+    <style>
+        @import url("https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,400;0,700;1,400&display=swap");
+        html, body, text {
+            font-family: "Roboto", sans-serif;
+            font-size: 12px;
+        }
+        main {
+        }
+        .table-container {
+            overflow-y: auto;
+            position: relative;
+        }
+        table {
+            width: 100%;
+            display: block;
+            border-collapse: collapse;
+            text-align: center;
+        }
+        .first, .last, .inner {
+            background: #35ff35;
+        }
+        .empty {
+            background: #bfffbf;
+        }
+        thead {
+            background-color: #f0f0f0;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+        th {
+            text-align: left;
+            padding: 10px;
+        }
+        /* left sticky row */
+        td:first-child, th:first-child {
+            background-color: #f0f0f0;
+            position: sticky;
+            z-index: 1;
+            left: 0;
+        }
+        tbody tr:last-child {
+            margin-bottom: 18px;
+        }
+    </style>
+</head>
+<body>
+    <main>
+    <h1>Commit Frequency Visualizer</h1>
+    <div class="table-container">
+        <table>
+            <thead>
+            <tr>
+                <th>Language &darr;</th>
+            </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+    </main>
+    
+    <script>
+    (async function() {
+        const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        
+        const resultsResponse = await fetch("./results.json");
+        const commitData = await resultsResponse.json();
+        console.log(commitData);
+        
+        const { commits, languages } = commitData;
+        const domainYears = Object.keys(commits);
+        domainYears.sort();
+        
+        const domainYearMonths = domainYears.flatMap(year => MONTH_NAMES.map(monthName => `${monthName} ${year}`));
+        console.log(domainYearMonths);
+
+        const years = Object.keys(commits);
+        const months = [...Array(12).keys()].map((i) => i + 1);
+        
+        const transformedData = domainYears.flatMap(year => months.map(month => 
+            commits[year][month] ?? {}
+        ))
+        .flatMap((monthData, idx) => Object.entries(monthData).map(([name, commits]) => ({
+            time: domainYearMonths[idx],
+            idx,
+            name,
+            commits
+        })));
+        console.log(transformedData);
+        const theadRow = document.querySelector("table thead tr");
+        for(let entry of domainYearMonths) {
+            const th = document.createElement("th");
+            th.textContent = entry;
+            theadRow.appendChild(th);
+        }
+        const byLanguage = {};
+        <!-- const earliestTime =  -->
+        for(let { time, name, idx, commits } of transformedData) {
+            byLanguage[name] ??= [];
+            byLanguage[name].length = domainYearMonths.length;
+            byLanguage[name][idx] = commits;
+        }
+        const tbody = document.querySelector("table tbody");
+        console.log(byLanguage);
+        const languageFirstIndices = {};
+        const sortedLanguages = Object.entries(byLanguage)
+            .sort((a, b) => {
+                let aIndex = languageFirstIndices[a[0]] ??= a[1].findIndex(el => el);
+                let bIndex = languageFirstIndices[b[0]] ??= b[1].findIndex(el => el);
+                return (aIndex > bIndex) - (aIndex < bIndex) || a[0].localeCompare(b[0], undefined, {sensitivity: "base"});
+            });
+        for(let [ language, entries ] of sortedLanguages) {
+            const tr = document.createElement("tr");
+            const tdStart = document.createElement("td");
+            tdStart.textContent = language;
+            tr.appendChild(tdStart);
+            let firstCellEncountered = false;
+            let toClear = [];
+            let lastInnerCell = null;
+            [...entries].forEach(entry => {
+                const td = document.createElement("td");
+                if(entry) {
+                    toClear.splice(0);
+                    if(!firstCellEncountered) {
+                        td.classList.add("first");
+                        firstCellEncountered = true;
+                    }
+                    td.textContent = entry;
+                    lastInnerCell = td;
+                }
+                else {
+                    toClear.push(td);
+                }
+                if(firstCellEncountered) {
+                    td.classList.add("inner");
+                    if(!entry) {
+                        td.classList.add("empty");
+                    }
+                }
+                tr.appendChild(td);
+            });
+            for(let td of toClear) {
+                td.classList.remove("inner");
+                td.classList.remove("empty");
+            }
+            if(lastInnerCell) {
+                lastInnerCell.classList.remove("inner");
+                lastInnerCell.classList.add("last");
+            }
+            tbody.appendChild(tr);
+        }
+        
+        const table = document.querySelector("table");
+        const bottomMargin = 20;//px
+        const resizeTable = () => {
+            table.style.height = `${document.documentElement.clientHeight - table.getBoundingClientRect().y - bottomMargin}px`;
+        };
+        resizeTable();
+        window.addEventListener("resize", resizeTable);
+    })();
+    </script>
+</body>
+</html>
