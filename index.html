@@ -9,106 +9,22 @@
         html, body, text {
             font-family: "Roboto", sans-serif;
         }
-
+        a, a:visited {
+            color: #3f6fdf;
+        }
+        a:hover {
+            color: #9fcfff;
+        }
+        
     </style>
 </head>
 <body>
-    <h1>Commit Frequency Visualizer</h1>
-    <div id="visualization"></div>
 
-    <script src="https://d3js.org/d3.v6.min.js"></script>
-    <script>
-    (async function () {
-        const resultsResponse = await fetch("./results.json");
-        const commitData = await resultsResponse.json();
-        console.log(commitData);
+<h1>Golfing History Visualizations</h1>
+<p>There may be a better description here at some point in the future. No promises though.</p>
+<ul>
+    <li><a href="./timeline">Timeline Table</a></li>
+    <li><a href="./dots">Dots</a></li>
+</ul>
 
-        // Function to create the visualization
-        const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-        function createVisualization(data) {
-            const { commits, languages } = data;
-            const domainYears = Object.keys(commits);
-            domainYears.sort();
-            
-            const domainYearMonths = domainYears.flatMap(year => MONTH_NAMES.map(monthName => `${monthName} ${year}`));
-            console.log(domainYearMonths);
-
-            const years = Object.keys(commits);
-            const months = [...Array(12).keys()].map((i) => i + 1);
-            
-            const transformedData = domainYears.flatMap(year => months.map(month => 
-                commits[year][month] ?? {}
-            ))
-            .flatMap((monthData, idx) => Object.entries(monthData).map(([name, commits]) => ({
-                time: domainYearMonths[idx],
-                name,
-                commits
-            })));
-            console.log(transformedData);
-            
-            const margin = { top: 20, right: 30, bottom: 40, left: 60 };
-            const width = languages.length * 65 - margin.left - margin.right;
-            const height = domainYears.length * 400 - margin.top - margin.bottom;
-
-            const svg = d3.select("#visualization")
-                .append("svg")
-                .attr("width", width + margin.left + margin.right)
-                .attr("height", height + margin.top + margin.bottom)
-                .append("g")
-                .attr("transform", `translate(${margin.left},${margin.top})`);
-            
-            const maxCommits = d3.max(years.map(year =>
-                d3.max(months.map(month =>
-                    d3.max(Object.values(commits?.[year]?.[month] ?? {}))
-                ))
-            ));
-            
-            const x = d3.scaleBand()
-                .domain(languages)
-                .range([0, width])
-                .padding(0.1);
-            
-            const y = d3.scaleBand()
-                .domain(domainYearMonths)
-                .range([0, height]);
-            
-            const z = d3.scaleLinear()
-                .domain([0, maxCommits])
-                .range([2, 15]);
-            
-            svg.append("g")
-                .selectAll("dot")
-                .data(transformedData)
-                .enter()
-                .append("circle")
-                    .attr("cx", d => x(d.name) + 28)
-                    .attr("cy", d => y(d.time) + 14)
-                    .attr("r", d => z(d.commits))
-                    .style("fill", "#69b3a2")
-                    .style("opacity", "0.7")
-                    .attr("stroke", "black")
-            
-            // X-axis
-            svg.append("g")
-                .attr("class", "x-axis")
-                .attr("transform", `translate(0,${height})`)
-                .call(d3.axisBottom(x).tickFormat(d => `${d}`));
-            
-            // top x-axis
-            const xAxisTop = d3.axisTop(x);
-            svg.append("g")
-                .attr("class", "x-axis")
-                .call(xAxisTop);
-            
-            // Y-axis
-            svg.append("g")
-                .attr("class", "y-axis")
-                .call(d3.axisLeft(y));
-        }
-
-        // Call the function with the commit data
-        createVisualization(commitData);
-    })();
-    </script>
 </body>
-</html>
