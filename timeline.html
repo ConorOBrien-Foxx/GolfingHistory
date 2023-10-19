@@ -32,7 +32,7 @@
             background-color: #f0f0f0;
             position: sticky;
             top: 0;
-            z-index: 1;
+            z-index: 2;
         }
         th {
             text-align: left;
@@ -45,8 +45,26 @@
             z-index: 1;
             left: 0;
         }
+        /* doesn't work. todo: fix so bottom element isn't covered by scroll bar */
         tbody tr:last-child {
             margin-bottom: 18px;
+        }
+        tbody tr:hover td {
+            background: #;
+        }
+        tbody tr:hover td {
+            background-color: #c7bfff;
+        }
+        tbody tr:hover .first,
+        tbody tr:hover .last,
+        tbody tr:hover .inner {
+            background-color: #8270ff;
+        }
+        tbody tr:hover .empty {
+            background-color: #a89bff;
+        }
+        tbody tr:hover td:first-child {
+            background-color: #8270ff;
         }
     </style>
 </head>
