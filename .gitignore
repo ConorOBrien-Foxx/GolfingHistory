@@ -1,0 +1,5 @@
+# Ignore
+copies/**
+
+# Allow
+!copies/README.md
