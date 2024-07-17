@@ -8,9 +8,9 @@
         @import url("https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,400;0,700;1,400&display=swap");
         html, body, text {
             font-family: "Roboto", sans-serif;
-            font-size: 12px;
         }
         main {
+            font-size: 12px;
         }
         h1 {
             margin: 0;
@@ -46,10 +46,10 @@
             border-right: 1px solid;
             border-bottom: 1px solid;
         }
-        td:nth-child(3n+1) {
+        .month-table td:nth-child(3n+1) {
             border-right: 1px dotted;
         }
-        td:nth-child(12n+1) {
+        .month-table td:nth-child(12n+1) {
             border-right: 1px solid;
         }
         .year-row th {
@@ -65,35 +65,92 @@
         tbody tr:last-child {
             margin-bottom: 18px;
         }
-        tbody tr:hover td {
-            background: #;
-        }
-        tbody tr:hover td {
+        tbody tr:hover td, tbody tr.highlighted td {
             background-color: #c7bfff;
         }
         tbody tr:hover .first,
         tbody tr:hover .last,
-        tbody tr:hover .inner {
+        tbody tr:hover .inner,
+        tbody tr.highlighted .first,
+        tbody tr.highlighted .last,
+        tbody tr.highlighted .inner
+        {
             background-color: #8270ff;
         }
-        tbody tr:hover .empty {
+        tbody tr:hover .empty,
+        tbody tr.highlighted .empty
+        {
             background-color: #a89bff;
         }
-        tbody tr:hover td:first-child {
+        tbody tr:hover td:first-child,
+        tbody tr.highlighted td:first-child
+        {
             background-color: #8270ff;
+        }
+        /* highlighted and hovered */
+        tbody tr.highlighted:hover td {
+            background-color: #ffbfbf;
+        }
+        tbody tr:hover.highlighted .first,
+        tbody tr:hover.highlighted .last,
+        tbody tr:hover.highlighted .inner
+        {
+            background-color: #ff7070;
+        }
+        tbody tr.highlighted:hover .empty
+        {
+            background-color: #ff9b9b;
+        }
+        tbody tr:hover.highlighted td:first-child
+        {
+            background-color: #ff7070;
+        }
+        table.filter-shown tbody tr {
+            display: none;
+        }
+        table.filter-shown tbody tr.highlighted {
+            display: table-row;
+        }
+        table.exclude-shown tbody tr.highlighted {
+            display: none;
+        }
+        header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+        }
+        header h1 {
+            font-size: 22px;
+        }
+        
+        .hidden {
+            display: none;
         }
     </style>
 </head>
 <body>
+    <header>
+        <h1>Commit Frequency Visualizer</h1>
+        <label>Scale: <select id="scaleSelect"><option>Month</option><option>Year</option></select></label>
+        <label>Languages: <select id="langsSelect"><option>All</option><option>Selected</option><option>Not Selected</option></select></label>
+    </header>
     <main>
-    <h1>Commit Frequency Visualizer</h1>
     <div class="table-container">
-        <table>
+        <table class="month-table">
             <thead>
             <tr class="year-row">
                 <th rowspan="2">Language &darr;</th>
             </tr>
             <tr class="month-row">
+            </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+        <table class="year-table hidden">
+            <thead>
+            <tr>
+                <th>Language &darr;</th>
             </tr>
             </thead>
             <tbody></tbody>
@@ -113,9 +170,9 @@
         const domainYears = Object.keys(commits);
         domainYears.sort();
         
-        <!-- const domainYearMonths = domainYears.flatMap(year => MONTH_NAMES.map(monthName => `${monthName} ${year}`)); -->
-        const domainYearMonths = domainYears.flatMap(year => MONTH_NAMES);
-        console.log(domainYearMonths);
+        const domainYearMonths = domainYears.flatMap(year => MONTH_NAMES.map(monthName => `${monthName} ${year}`));
+        //const domainYearMonths = domainYears.flatMap(year => MONTH_NAMES);
+        //console.log(domainYearMonths);
 
         const years = Object.keys(commits);
         const months = [...Array(12).keys()].map((i) => i + 1);
@@ -129,84 +186,159 @@
             name,
             commits
         })));
-        console.log(transformedData);
-        const theadYear = document.querySelector(".year-row");
-        const theadRow = document.querySelector(".month-row");
+        window.transformedData = transformedData;
+        // console.log(transformedData);
+        
+        // headers
+        const theadMonthTableYear = document.querySelector(".month-table .year-row");
+        const theadMonthTableRow = document.querySelector(".month-table .month-row");
+        const theadYearTable = document.querySelector(".year-table thead tr");
         for(let year of domainYears) {
             const thYear = document.createElement("th");
             thYear.colSpan = 12;
             thYear.textContent = year;
-            theadYear.appendChild(thYear);
+            theadMonthTableYear.appendChild(thYear);
             for(let month of MONTH_NAMES) {
                 const th = document.createElement("th");
                 th.textContent = month;
-                theadRow.appendChild(th);
+                theadMonthTableRow.appendChild(th);
             }
+            
+            const thYearTotal = document.createElement("th");
+            thYearTotal.textContent = year;
+            theadYearTable.appendChild(thYearTotal);
         }
         const byLanguage = {};
-        <!-- const earliestTime =  -->
+        // const earliestTime =
         for(let { time, name, idx, commits } of transformedData) {
             byLanguage[name] ??= [];
             byLanguage[name].length = domainYearMonths.length;
             byLanguage[name][idx] = commits;
         }
-        const tbody = document.querySelector("table tbody");
-        console.log(byLanguage);
-        const languageFirstIndices = {};
-        const sortedLanguages = Object.entries(byLanguage)
-            .sort((a, b) => {
-                let aIndex = languageFirstIndices[a[0]] ??= a[1].findIndex(el => el);
-                let bIndex = languageFirstIndices[b[0]] ??= b[1].findIndex(el => el);
-                return (aIndex > bIndex) - (aIndex < bIndex) || a[0].localeCompare(b[0], undefined, {sensitivity: "base"});
-            });
-        for(let [ language, entries ] of sortedLanguages) {
-            const tr = document.createElement("tr");
-            const tdStart = document.createElement("td");
-            tdStart.textContent = language;
-            tr.appendChild(tdStart);
-            let firstCellEncountered = false;
-            let toClear = [];
-            let lastInnerCell = null;
-            [...entries].forEach(entry => {
-                const td = document.createElement("td");
-                if(entry) {
-                    toClear.splice(0);
-                    if(!firstCellEncountered) {
-                        td.classList.add("first");
-                        firstCellEncountered = true;
-                    }
-                    td.textContent = entry;
-                    lastInnerCell = td;
-                }
-                else {
-                    toClear.push(td);
-                }
-                if(firstCellEncountered) {
-                    td.classList.add("inner");
-                    if(!entry) {
-                        td.classList.add("empty");
-                    }
-                }
-                tr.appendChild(td);
-            });
-            for(let td of toClear) {
-                td.classList.remove("inner");
-                td.classList.remove("empty");
-            }
-            if(lastInnerCell) {
-                lastInnerCell.classList.remove("inner");
-                lastInnerCell.classList.add("last");
-            }
-            tbody.appendChild(tr);
-        }
         
-        const table = document.querySelector("table");
-        const bottomMargin = 20;//px
-        const resizeTable = () => {
-            table.style.height = `${document.documentElement.clientHeight - table.getBoundingClientRect().y - bottomMargin}px`;
+        const addLanguageData = (table, byLanguage) => {
+            const tbody = table.querySelector("tbody");
+            console.log(byLanguage);
+            const languageFirstIndices = {};
+            const sortedLanguages = Object.entries(byLanguage)
+                .sort((a, b) => {
+                    let aIndex = languageFirstIndices[a[0]] ??= a[1].findIndex(el => el);
+                    let bIndex = languageFirstIndices[b[0]] ??= b[1].findIndex(el => el);
+                    return (aIndex > bIndex) - (aIndex < bIndex) || a[0].localeCompare(b[0], undefined, {sensitivity: "base"});
+                });
+            for(let [ language, entries ] of sortedLanguages) {
+                const tr = document.createElement("tr");
+                const tdStart = document.createElement("td");
+                tdStart.textContent = language;
+                tr.appendChild(tdStart);
+                let firstCellEncountered = false;
+                let toClear = [];
+                let lastInnerCell = null;
+                [...entries].forEach(entry => {
+                    const td = document.createElement("td");
+                    if(entry) {
+                        toClear.splice(0);
+                        if(!firstCellEncountered) {
+                            td.classList.add("first");
+                            firstCellEncountered = true;
+                        }
+                        td.textContent = entry;
+                        lastInnerCell = td;
+                    }
+                    else {
+                        toClear.push(td);
+                    }
+                    if(firstCellEncountered) {
+                        td.classList.add("inner");
+                        if(!entry) {
+                            td.classList.add("empty");
+                        }
+                    }
+                    tr.appendChild(td);
+                });
+                for(let td of toClear) {
+                    td.classList.remove("inner");
+                    td.classList.remove("empty");
+                }
+                if(lastInnerCell) {
+                    lastInnerCell.classList.remove("inner");
+                    lastInnerCell.classList.add("last");
+                }
+                tbody.appendChild(tr);
+            }
+            
+            const bottomMargin = 10;//px
+            const resizeTable = () => {
+                table.style.height = `${document.documentElement.clientHeight - table.getBoundingClientRect().y - bottomMargin}px`;
+            };
+            resizeTable();
+            window.addEventListener("resize", resizeTable);
+            
+            table.addEventListener("click", ev => {
+                // TODO: share highlights across tables
+                if(ev.target.tagName !== "TD") {
+                    return;
+                }
+                let row = ev.target.closest("tr");
+                if(!row) {
+                    console.warn("no row found for td");
+                    return;
+                }
+                row.classList.toggle("highlighted");
+            });
         };
-        resizeTable();
-        window.addEventListener("resize", resizeTable);
+        
+        const monthTable = document.querySelector(".month-table");
+        const yearTable = document.querySelector(".year-table");
+        
+        addLanguageData(monthTable, byLanguage);
+        
+        let byLanguageYear = Object.fromEntries(
+            Object.entries(byLanguage)
+                .map(([ key, points ]) => [
+                    key, [...Array(points.length / 12).keys()].map(idx => points.slice(idx * 12, (idx + 1) * 12).reduce((p, c) => p + c, 0))
+                ])
+        );
+        addLanguageData(yearTable, byLanguageYear);
+        
+        const scaleSelect = document.getElementById("scaleSelect")
+        const updateScaleSelect = () => {
+            let { value } = scaleSelect;
+            if(value === "Month") {
+                monthTable.classList.remove("hidden");
+                yearTable.classList.add("hidden");
+            }
+            else if(value === "Year") {
+                monthTable.classList.add("hidden");
+                yearTable.classList.remove("hidden");
+            }
+        };
+        
+        scaleSelect.addEventListener("change", updateScaleSelect);
+        updateScaleSelect();
+        
+        const langsSelect = document.getElementById("langsSelect")
+        const updateLangsSelect = () => {
+            let { value } = langsSelect;
+            for(let table of document.querySelectorAll("table")) {
+                if(value === "All") {
+                    table.classList.remove("filter-shown");
+                    table.classList.remove("exclude-shown");
+                }
+                else if(value === "Selected") {
+                    table.classList.add("filter-shown");
+                    table.classList.remove("exclude-shown");
+                }
+                else if(value === "Not Selected") {
+                    table.classList.remove("filter-shown");
+                    table.classList.add("exclude-shown");
+                }
+            }
+        };
+        
+        langsSelect.addEventListener("change", updateLangsSelect);
+        updateLangsSelect();
+        
     })();
     </script>
 </body>
