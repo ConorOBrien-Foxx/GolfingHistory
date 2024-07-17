@@ -162,6 +162,16 @@
     (async function() {
         const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
         
+        const lowGradient = [170, 255, 170];
+        const highGradient = [0, 179, 0];
+        
+        const lerpGradient = (high, value) => {
+            // assume low = 0
+            let percent = Math.min(1.0, value / high);
+            let values = lowGradient.map((c, idx) => c + (highGradient[idx] - c) * percent);
+            return `rgb(${values.join(", ")})`;
+        };
+        
         const resultsResponse = await fetch("./results.json");
         const commitData = await resultsResponse.json();
         console.log(commitData);
@@ -243,6 +253,7 @@
                             firstCellEncountered = true;
                         }
                         td.textContent = entry;
+                        td.style.backgroundColor = lerpGradient(436, entry);
                         lastInnerCell = td;
                     }
                     else {
