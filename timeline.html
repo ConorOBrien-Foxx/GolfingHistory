@@ -253,7 +253,7 @@
                             firstCellEncountered = true;
                         }
                         td.textContent = entry;
-                        td.style.backgroundColor = lerpGradient(436, entry);
+                        td.style.backgroundColor = lerpGradient(100, entry);
                         lastInnerCell = td;
                     }
                     else {
@@ -277,13 +277,6 @@
                 }
                 tbody.appendChild(tr);
             }
-            
-            const bottomMargin = 10;//px
-            const resizeTable = () => {
-                table.style.height = `${document.documentElement.clientHeight - table.getBoundingClientRect().y - bottomMargin}px`;
-            };
-            resizeTable();
-            window.addEventListener("resize", resizeTable);
             
             table.addEventListener("click", ev => {
                 // TODO: share highlights across tables
@@ -312,6 +305,17 @@
         );
         addLanguageData(yearTable, byLanguageYear);
         
+        const bottomMargin = 10;//px
+        const overallMargin = 10;
+        const resizeTables = () => {
+            for(let table of [ monthTable, yearTable ]) {
+                console.log(document.documentElement.clientHeight, table.getBoundingClientRect().y);
+                let headerHeight = document.querySelector("header").getBoundingClientRect().height;
+                table.style.height = `${document.documentElement.clientHeight - headerHeight - bottomMargin - overallMargin}px`;
+            }
+        };
+        window.addEventListener("resize", resizeTables);
+        
         const scaleSelect = document.getElementById("scaleSelect")
         const updateScaleSelect = () => {
             let { value } = scaleSelect;
@@ -323,6 +327,7 @@
                 monthTable.classList.add("hidden");
                 yearTable.classList.remove("hidden");
             }
+            resizeTables();
         };
         
         scaleSelect.addEventListener("change", updateScaleSelect);
