@@ -264,3 +264,9 @@ Chocolate
 https://github.com/Steffan153/chocolate
 Halfwit
 https://github.com/chunkybanana/halfwit
+Uiua
+https://github.com/uiua-lang/uiua
+dzaima/APL
+https://github.com/dzaima/APL
+ngn/k
+https://codeberg.org/ngn/k.git

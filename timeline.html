@@ -52,10 +52,8 @@
         .month-table td:nth-child(12n+1) {
             border-right: 1px solid;
         }
-        .year-row th {
-        }
         /* left sticky row */
-        td:first-child, .year-row th:first-child {
+        td:first-child, .year-row th:first-child, .year-table thead th:first-child {
             background-color: #f0f0f0;
             position: sticky;
             z-index: 1;
@@ -226,17 +224,22 @@
             byLanguage[name][idx] = commits;
         }
         
+        let languageOrder = null;
         const addLanguageData = (table, byLanguage) => {
             const tbody = table.querySelector("tbody");
             console.log(byLanguage);
             const languageFirstIndices = {};
-            const sortedLanguages = Object.entries(byLanguage)
-                .sort((a, b) => {
-                    let aIndex = languageFirstIndices[a[0]] ??= a[1].findIndex(el => el);
-                    let bIndex = languageFirstIndices[b[0]] ??= b[1].findIndex(el => el);
-                    return (aIndex > bIndex) - (aIndex < bIndex) || a[0].localeCompare(b[0], undefined, {sensitivity: "base"});
-                });
-            for(let [ language, entries ] of sortedLanguages) {
+            if(languageOrder === null) {
+                const sortedLanguages = Object.entries(byLanguage)
+                    .sort((a, b) => {
+                        let aIndex = languageFirstIndices[a[0]] ??= a[1].findIndex(el => el);
+                        let bIndex = languageFirstIndices[b[0]] ??= b[1].findIndex(el => el);
+                        return (aIndex > bIndex) - (aIndex < bIndex) || a[0].localeCompare(b[0], undefined, {sensitivity: "base"});
+                    });
+                languageOrder = sortedLanguages.map(entries => entries[0]);
+            }
+            for(let language of languageOrder) {
+                let entries = byLanguage[language];
                 const tr = document.createElement("tr");
                 const tdStart = document.createElement("td");
                 tdStart.textContent = language;

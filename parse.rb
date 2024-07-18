@@ -7,10 +7,15 @@ require 'set'
 language_data = {}
 min_year = max_year = nil
 Dir[File.join("copies", "_gohilogs", "*.txt")].each { |file|
-    language_name = File.basename file, ".txt"
-    commit_points = File.read(file)
+    # language_name = File.basename file, ".txt"
+    content = File.read(file).lines
+    language_name = content.shift.chomp
+    commit_points = content
+        .join
         .scan(/commit.+\nAuthor:.+\nDate:\s+(.+)(?:\n|$)/)
         .map { Date.parse _1.first }
+    
+    # p language_name, commit_points
     
     language_data[language_name] = {
         commit_points: commit_points
